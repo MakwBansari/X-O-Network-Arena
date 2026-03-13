@@ -55,21 +55,29 @@ public class GameClient {
 
             // Main loop for user input
             while (running) {
-                if (myTurn) {
-                    System.out.println("\nYour turn! Enter move (e.g., 'A1', 'B2') or type '/chat <msg>' or '/exit':");
-                    String input = scanner.nextLine().trim();
-                    handleUserInput(input);
+                String input = scanner.nextLine();
+                if (input == null || input.equalsIgnoreCase("/exit")) {
+                    out.println("EXIT");
+                    running = false;
+                    break;
+                }
+                
+                input = input.trim();
+                if (input.isEmpty()) continue;
+
+                if (input.startsWith("/chat ")) {
+                    out.println("CHAT " + input.substring(6));
+                } else if (input.equalsIgnoreCase("REPLAY")) {
+                    out.println("REPLAY");
+                } else if (myTurn && input.toUpperCase().matches("[A-C][1-3]")) {
+                    handleMoveInput(input);
+                } else if (myTurn) {
+                    System.out.println(RED + "Invalid move format or command. Use e.g., 'A1' or '/chat msg'." + RESET);
                 } else {
-                    // Even if not turn, allow chat
-                    String input = scanner.nextLine();
-                    if (input.startsWith("/chat ")) {
-                        out.println("CHAT " + input.substring(6));
-                    } else if (input.equalsIgnoreCase("/exit")) {
-                        out.println("EXIT");
-                        running = false;
-                    } else {
-                        System.out.println("Wait for your turn or use /chat <msg>.");
-                    }
+                    // Not turn, and not chat/exit/replay
+                    System.out.println(YELLOW + "Not your turn! You can still use /chat <msg>." + RESET);
+                    // Force a UI refresh to show the "waiting" state again clearly
+                    refreshUI();
                 }
             }
 
@@ -80,21 +88,12 @@ public class GameClient {
         }
     }
 
-    private void handleUserInput(String input) {
-        if (input.startsWith("/chat ")) {
-            out.println("CHAT " + input.substring(6));
-        } else if (input.equalsIgnoreCase("/exit")) {
-            out.println("EXIT");
-            running = false;
-        } else if (input.toUpperCase().matches("[A-C][1-3]")) {
-            char rowChar = Character.toUpperCase(input.charAt(0));
-            int row = rowChar - 'A' + 1;
-            int col = Character.getNumericValue(input.charAt(1));
-            out.println("MOVE " + row + "," + col);
-            myTurn = false;
-        } else {
-            System.out.println("Invalid input. Use format like 'A1' (A-C, 1-3) or '/chat <msg>'.");
-        }
+    private void handleMoveInput(String input) {
+        char rowChar = Character.toUpperCase(input.charAt(0));
+        int row = rowChar - 'A' + 1;
+        int col = Character.getNumericValue(input.charAt(1));
+        out.println("MOVE " + row + "," + col);
+        myTurn = false; // Optimistic turn update
     }
 
     private void listenToServer() {
@@ -170,7 +169,9 @@ public class GameClient {
             .replace("[X]", RED + "[X]" + RESET)
             .replace("[O]", BLUE + "[O]" + RESET)
             .replace(" X ", RED + " X " + RESET)
-            .replace(" O ", BLUE + " O " + RESET);
+            .replace(" O ", BLUE + " O " + RESET)
+            .replace("|X|", "|" + RED + " X " + RESET + "|")
+            .replace("|O|", "|" + BLUE + " O " + RESET + "|");
         
         System.out.println(coloredBoard);
         System.out.println(YELLOW + currentInfo + RESET);

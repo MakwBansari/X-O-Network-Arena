@@ -67,18 +67,24 @@ public class GameServer {
 
         if (board.setMove(row, col, symbol)) {
             broadcastBoard();
-            broadcast("INFO " + board.getLastMoveInfo());
-            broadcast("SCORE " + DatabaseManager.getScoreboard());
-            checkGameState(symbol);
+            
+            if (com.xonetwork.common.GameLogic.checkWin(board, symbol)) {
+                gameActive = false;
+                broadcast("INFO " + board.getLastMoveInfo());
+                broadcast("WIN " + symbol + " Wins!");
+                clients.get(currentPlayerIndex).updatePersistence("WIN");
+            } else if (com.xonetwork.common.GameLogic.checkDraw(board)) {
+                gameActive = false;
+                broadcast("INFO " + board.getLastMoveInfo());
+                broadcast("DRAW It's a draw!");
+                clients.get(currentPlayerIndex).updatePersistence("DRAW");
+            } else {
+                broadcast("INFO " + board.getLastMoveInfo());
+                rotateTurn();
+            }
         } else {
             clients.get(currentPlayerIndex).sendMessage("ERROR Invalid move!");
         }
-    }
-
-    private static void checkGameState(char symbol) {
-        // Implement win/draw logic here using GameLogic
-        // For now, just rotate turn
-        rotateTurn();
     }
 
     public static synchronized void rotateTurn() {

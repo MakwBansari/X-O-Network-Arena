@@ -68,23 +68,12 @@ public class ClientHandler implements Runnable {
             int col = Integer.parseInt(coords[1]) - 1;
             
             GameServer.handleMove(row, col, symbol);
-            
-            // Check win/draw state after move and notify through GameServer
-            if (GameLogic.checkWin(GameServer.getBoard(), symbol)) {
-                GameServer.setGameActive(false);
-                GameServer.broadcast("WIN " + symbol + " Wins!");
-                updatePersistence("WIN");
-            } else if (GameLogic.checkDraw(GameServer.getBoard())) {
-                GameServer.setGameActive(false);
-                GameServer.broadcast("DRAW It's a draw!");
-                updatePersistence("DRAW");
-            }
         } catch (Exception e) {
-            sendMessage("ERROR Invalid input format.");
+            sendMessage("ERROR Invalid input format. Use row,col (e.g. 1,1)");
         }
     }
 
-    private void updatePersistence(String result) {
+    public void updatePersistence(String result) {
         String p1Name = GameServer.getClients().get(0).playerName;
         String p2Name = GameServer.getClients().get(1).playerName;
         
