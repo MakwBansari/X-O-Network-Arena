@@ -109,7 +109,8 @@ public class GameServer {
     }
 
     public static void broadcastBoard() {
-        broadcast("BOARD " + board.getFormattedBoard());
+        String boardStr = board.getFormattedBoard().replace("\n", "\\n");
+        broadcast("BOARD " + boardStr);
     }
 
     public static void broadcastChat(String sender, String msg) {
