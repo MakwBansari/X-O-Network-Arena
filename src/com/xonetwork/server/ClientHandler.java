@@ -48,7 +48,7 @@ public class ClientHandler implements Runnable {
                         GameServer.broadcastChat(playerName != null ? playerName : "Player " + playerNum, parts[1]);
                         break;
                     case "HISTORY":
-                        sendMessage("CHAT [HISTORY]:\n" + GameServer.getHistory());
+                        sendMessage("CHAT [HISTORY]:\\n" + GameServer.getHistory().replace("\n", "\\n"));
                         break;
                     case "REPLAY":
                         handleReplay();

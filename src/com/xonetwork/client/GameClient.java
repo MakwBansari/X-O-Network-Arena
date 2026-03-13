@@ -133,7 +133,7 @@ public class GameClient {
                         refreshUI();
                         break;
                     case "CHAT":
-                        chatHistory.add(data);
+                        chatHistory.add(data.replace("\\n", "\n"));
                         if (chatHistory.size() > 5) chatHistory.remove(0);
                         refreshUI();
                         break;
