@@ -69,6 +69,8 @@ public class GameClient {
                     out.println("CHAT " + input.substring(6));
                 } else if (input.equalsIgnoreCase("REPLAY")) {
                     out.println("REPLAY");
+                } else if (input.equalsIgnoreCase("/history")) {
+                    out.println("HISTORY");
                 } else if (myTurn && input.toUpperCase().matches("[A-C][1-3]")) {
                     handleMoveInput(input);
                 } else if (myTurn) {

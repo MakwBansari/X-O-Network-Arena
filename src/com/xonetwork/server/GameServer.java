@@ -20,6 +20,8 @@ public class GameServer {
     private static GameBoard board = new GameBoard();
     private static int currentPlayerIndex = 0; // 0 for Player 1 (X), 1 for Player 2 (O)
     private static boolean gameActive = false;
+    private static java.util.Set<ClientHandler> replayRequests = new java.util.HashSet<>();
+    private static java.util.List<String> matchHistory = new java.util.ArrayList<>();
 
     public static void main(String[] args) {
         System.out.println("X-O Network Arena Server starting...");
@@ -49,6 +51,9 @@ public class GameServer {
     public static synchronized void startGame() {
         gameActive = true;
         board.resetBoard();
+        replayRequests.clear();
+        matchHistory.clear();
+        matchHistory.add("--- Game Started ---");
         // Rotate starting player for variety on replay
         currentPlayerIndex = (clients.size() == 2) ? (currentPlayerIndex + 1) % 2 : 0;
         broadcast("START Game started!");
@@ -66,25 +71,51 @@ public class GameServer {
         }
 
         if (board.setMove(row, col, symbol)) {
+            String moveInfo = board.getLastMoveInfo();
+            matchHistory.add(moveInfo);
             broadcastBoard();
             
             if (com.xonetwork.common.GameLogic.checkWin(board, symbol)) {
                 gameActive = false;
-                broadcast("INFO " + board.getLastMoveInfo());
+                matchHistory.add("Game Over: " + symbol + " Wins!");
+                broadcast("INFO " + moveInfo);
                 broadcast("WIN " + symbol + " Wins!");
                 clients.get(currentPlayerIndex).updatePersistence("WIN");
+                broadcastEndOptions();
             } else if (com.xonetwork.common.GameLogic.checkDraw(board)) {
                 gameActive = false;
-                broadcast("INFO " + board.getLastMoveInfo());
+                matchHistory.add("Game Over: Draw");
+                broadcast("INFO " + moveInfo);
                 broadcast("DRAW It's a draw!");
                 clients.get(currentPlayerIndex).updatePersistence("DRAW");
+                broadcastEndOptions();
             } else {
-                broadcast("INFO " + board.getLastMoveInfo());
+                broadcast("INFO " + moveInfo);
                 rotateTurn();
             }
         } else {
             clients.get(currentPlayerIndex).sendMessage("ERROR Invalid move!");
         }
+    }
+
+    private static void broadcastEndOptions() {
+        broadcast("INFO Type 'REPLAY' for a rematch or '/history' to see moves.");
+    }
+
+    public static synchronized void handleReplayRequest(ClientHandler client) {
+        if (gameActive) return;
+        
+        replayRequests.add(client);
+        if (replayRequests.size() == 2) {
+            startGame();
+        } else {
+            String requester = client.getPlayerName() != null ? client.getPlayerName() : "Player " + client.getPlayerNum();
+            broadcast("CHAT [SYSTEM]: " + requester + " wants a rematch! Type 'REPLAY' to accept.");
+        }
+    }
+
+    public static String getHistory() {
+        return String.join("\n", matchHistory);
     }
 
     public static synchronized void rotateTurn() {

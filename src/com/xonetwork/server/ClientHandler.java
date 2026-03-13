@@ -47,6 +47,9 @@ public class ClientHandler implements Runnable {
                     case "CHAT":
                         GameServer.broadcastChat(playerName != null ? playerName : "Player " + playerNum, parts[1]);
                         break;
+                    case "HISTORY":
+                        sendMessage("CHAT [HISTORY]:\n" + GameServer.getHistory());
+                        break;
                     case "REPLAY":
                         handleReplay();
                         break;
@@ -95,10 +98,10 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleReplay() {
-        // Simple replay sync: if both want replay, restart
-        // For now, let's just restart if either asks (simplified)
-        GameServer.startGame();
+        GameServer.handleReplayRequest(this);
     }
+
+    public String getPlayerName() { return playerName; }
 
     public void sendMessage(String msg) {
         if (out != null) {
