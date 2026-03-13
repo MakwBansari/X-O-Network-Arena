@@ -43,23 +43,25 @@ public class GameBoard implements Serializable {
 
     public String getFormattedBoard() {
         StringBuilder sb = new StringBuilder();
-        sb.append("\n      1     2     3  \n");
-        sb.append("   +-----+-----+-----+\n");
+        sb.append("\n        1     2     3  \n");
+        sb.append("     +-----+-----+-----+\n");
         char rowLabel = 'A';
         for (int i = 0; i < SIZE; i++) {
-            sb.append(" ").append(rowLabel++).append(" |");
+            sb.append("  ").append(rowLabel++).append("  |");
             for (int j = 0; j < SIZE; j++) {
                 char symbol = grid[i][j];
                 String displaySymbol = (symbol == ' ') ? " " : String.valueOf(symbol);
                 
                 if (i == lastMoveRow && j == lastMoveCol) {
-                    sb.append("[").append(displaySymbol).append("]");
+                    // Cell is " [X] " (5 chars)
+                    sb.append(" [").append(displaySymbol).append("] ");
                 } else {
+                    // Cell is "  X  " (5 chars)
                     sb.append("  ").append(displaySymbol).append("  ");
                 }
                 sb.append("|");
             }
-            sb.append("\n   +-----+-----+-----+\n");
+            sb.append("\n     +-----+-----+-----+\n");
         }
         return sb.toString();
     }

@@ -164,14 +164,12 @@ public class GameClient {
         System.out.println("Player: " + GREEN + playerName + RESET + " | Symbol: " + 
                 (mySymbol == 'X' ? RED : BLUE) + mySymbol + RESET);
         
-        // Colorize the board
+        // Colorize the board maintaining 5-char width spacing
         String coloredBoard = currentBoard
-            .replace("[X]", RED + "[X]" + RESET)
-            .replace("[O]", BLUE + "[O]" + RESET)
-            .replace(" X ", RED + " X " + RESET)
-            .replace(" O ", BLUE + " O " + RESET)
-            .replace("|X|", "|" + RED + " X " + RESET + "|")
-            .replace("|O|", "|" + BLUE + " O " + RESET + "|");
+            .replace(" [X] ", RED + " [X] " + RESET)
+            .replace(" [O] ", BLUE + " [O] " + RESET)
+            .replace("  X  ", RED + "  X  " + RESET)
+            .replace("  O  ", BLUE + "  O  " + RESET);
         
         System.out.println(coloredBoard);
         System.out.println(YELLOW + currentInfo + RESET);
