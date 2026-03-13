@@ -16,6 +16,11 @@ You can use the provided build scripts instead of running `javac` manually.
 .\build.ps1
 ```
 
+**On Windows (Command Prompt):**
+```cmd
+build.bat
+```
+
 **On Linux/Mac/Git Bash (Bash):**
 ```bash
 chmod +x build.sh
@@ -35,6 +40,11 @@ In the same or a new terminal, use the run script for your OS:
 .\run-server.ps1
 ```
 
+**Windows (Command Prompt):**
+```cmd
+run-server.bat
+```
+
 **Manual/Other:**
 ```powershell
 java -cp "bin;lib/*" com.xonetwork.server.GameServer
@@ -46,6 +56,11 @@ Open two separate terminals for the two players and run:
 **Windows (PowerShell):**
 ```powershell
 .\run-client.ps1
+```
+
+**Windows (Command Prompt):**
+```cmd
+run-client.bat
 ```
 
 **Manual/Other:**
