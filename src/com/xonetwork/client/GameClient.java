@@ -144,8 +144,8 @@ public class GameClient {
                     case "WIN":
                     case "LOSS":
                     case "DRAW":
-                        System.out.println(CYAN + "\n*** " + data + " ***" + RESET);
-                        System.out.println("Type 'REPLAY' to play again or '/exit' to quit.");
+                        currentInfo = "*** " + data + " ***\\nType 'REPLAY' to play again or '/exit' to quit.";
+                        refreshUI();
                         break;
                     case "START":
                         currentInfo = "Game Started!";
@@ -179,7 +179,7 @@ public class GameClient {
             .replace("  O  ", BLUE + "  O  " + RESET);
         
         System.out.println(coloredBoard);
-        System.out.println(YELLOW + currentInfo + RESET);
+        System.out.println(YELLOW + currentInfo.replace("\\n", "\n") + RESET);
         
         if (!currentScoreboard.isEmpty()) {
             System.out.println(currentScoreboard);

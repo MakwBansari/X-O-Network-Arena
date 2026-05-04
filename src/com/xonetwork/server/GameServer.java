@@ -23,7 +23,7 @@ public class GameServer {
     private static GameBoard board = new GameBoard();
     private static int currentPlayerIndex = 0; // 0 for Player 1 (X), 1 for Player 2 (O)
     private static boolean gameActive = false;
-    private static Set<ClientHandler> replayRequests = Collections.synchronizedSet(new java.util.HashSet<>());
+    private static Set<Integer> replayRequests = Collections.synchronizedSet(new java.util.HashSet<>());
     private static java.util.List<String> matchHistory = new java.util.ArrayList<>();
 
     public static void main(String[] args) {
@@ -108,11 +108,16 @@ public class GameServer {
     public static synchronized void handleReplayRequest(ClientHandler requester) {
         if (gameActive) return;
         
-        replayRequests.add(requester);
-        if (replayRequests.size() == 2) {
+        int playerNum = requester.getPlayerNum();
+        replayRequests.add(playerNum);
+        
+        String requesterName = requester.getPlayerName() != null ? requester.getPlayerName() : "Player " + playerNum;
+        System.out.println("Replay requested by: " + requesterName + " (Total requests: " + replayRequests.size() + ")");
+
+        if (replayRequests.size() >= 2) {
+            System.out.println("Both players requested replay. Starting new game...");
             startGame();
         } else {
-            String requesterName = requester.getPlayerName() != null ? requester.getPlayerName() : "Player " + requester.getPlayerNum();
             for (ClientHandler client : clients) {
                 if (client != requester) {
                     client.sendMessage("REPLAY_PROMPT " + requesterName);
@@ -126,7 +131,7 @@ public class GameServer {
     public static synchronized void handlePlayerDisconnect(ClientHandler client) {
         if (clients.contains(client)) {
             clients.remove(client);
-            replayRequests.remove(client);
+            replayRequests.remove(client.getPlayerNum());
             String name = client.getPlayerName() != null ? client.getPlayerName() : "Player " + client.getPlayerNum();
             System.out.println(name + " disconnected.");
             
