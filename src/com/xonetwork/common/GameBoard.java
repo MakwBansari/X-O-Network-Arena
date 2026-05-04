@@ -51,7 +51,7 @@ public class GameBoard implements Serializable {
             for (int j = 0; j < SIZE; j++) {
                 char symbol = grid[i][j];
                 String displaySymbol = (symbol == ' ') ? " " : String.valueOf(symbol);
-                
+
                 if (i == lastMoveRow && j == lastMoveCol) {
                     // Cell is " [X] " (5 chars)
                     sb.append(" [").append(displaySymbol).append("] ");
