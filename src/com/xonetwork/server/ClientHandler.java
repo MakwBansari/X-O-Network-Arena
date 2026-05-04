@@ -98,7 +98,7 @@ public class ClientHandler implements Runnable {
             DatabaseManager.recordMatch(p1Name, p2Name, "DRAW");
         }
         
-        GameServer.broadcast("SCORE " + DatabaseManager.getScoreboard());
+        GameServer.broadcastScoreboard();
         logMove("Match ended: " + result + " by " + playerName);
     }
 

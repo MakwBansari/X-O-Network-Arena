@@ -42,6 +42,7 @@ public class GameServer {
                 if (clients.size() == 1) {
                     handler.sendMessage("WAIT Waiting for opponent...");
                 }
+                broadcastScoreboard();
             }
 
             startGame();
@@ -61,6 +62,7 @@ public class GameServer {
         currentPlayerIndex = (clients.size() == 2) ? (currentPlayerIndex + 1) % 2 : 0;
         broadcast("START Game started!");
         broadcastBoard();
+        broadcastScoreboard();
         notifyTurn();
     }
 
@@ -175,6 +177,10 @@ public class GameServer {
 
     public static synchronized void broadcastChat(String sender, String msg) {
         broadcast("CHAT [" + sender + "]: " + msg);
+    }
+
+    public static synchronized void broadcastScoreboard() {
+        broadcast("SCORE " + DatabaseManager.getScoreboard().replace("\n", "\\n"));
     }
     
     public static GameBoard getBoard() {

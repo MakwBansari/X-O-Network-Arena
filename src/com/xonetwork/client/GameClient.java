@@ -187,6 +187,7 @@ public class GameClient {
         System.out.println(YELLOW + currentInfo.replace("\\n", "\n") + RESET);
         
         if (!currentScoreboard.isEmpty()) {
+            System.out.println("\n" + BOLD + CYAN + "--- GLOBAL ARENA STATS ---" + RESET);
             System.out.println(currentScoreboard);
         }
         
