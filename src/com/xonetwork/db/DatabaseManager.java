@@ -1,120 +1,116 @@
 package com.xonetwork.db;
 
-import java.sql.*;
+import java.io.*;
 import java.time.LocalDateTime;
+import java.util.*;
 
+/**
+ * DatabaseManager now uses a local file-based storage to avoid issues with missing JDBC drivers.
+ * It tracks player stats and match history in 'scoreboard.dat' and 'matches.log'.
+ */
 public class DatabaseManager {
-    private static final String DB_URL = "jdbc:sqlite:xonetwork.db";
-
-    private static boolean isAvailable = false;
+    private static final String STATS_FILE = "scoreboard.dat";
+    private static final String MATCH_LOG = "matches.log";
+    private static Properties playerStats = new Properties();
 
     static {
-        try {
-            Class.forName("org.sqlite.JDBC");
-            initializeDatabase();
-            isAvailable = true;
-            System.out.println("Database initialized successfully.");
-        } catch (ClassNotFoundException e) {
-            System.err.println("SQLite JDBC driver not found. Persistence disabled.");
-        } catch (Throwable t) {
-            System.err.println("Failed to initialize database: " + t.getMessage() + ". Persistence disabled.");
+        loadStats();
+        System.out.println("File-based Database initialized successfully.");
+    }
+
+    private static synchronized void loadStats() {
+        File file = new File(STATS_FILE);
+        if (file.exists()) {
+            try (FileInputStream fis = new FileInputStream(file)) {
+                playerStats.load(fis);
+            } catch (IOException e) {
+                System.err.println("Error loading stats: " + e.getMessage());
+            }
         }
     }
 
-    private static void initializeDatabase() {
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-             Statement stmt = conn.createStatement()) {
-            
-            stmt.execute("CREATE TABLE IF NOT EXISTS players (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "name TEXT UNIQUE," +
-                    "wins INTEGER DEFAULT 0," +
-                    "losses INTEGER DEFAULT 0," +
-                    "draws INTEGER DEFAULT 0)");
-
-            stmt.execute("CREATE TABLE IF NOT EXISTS matches (" +
-                    "match_id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "player1 TEXT," +
-                    "player2 TEXT," +
-                    "winner TEXT," +
-                    "date_time TEXT)");
-            
-        } catch (SQLException e) {
-            System.err.println("Error initializing database: " + e.getMessage());
+    private static synchronized void saveStats() {
+        try (FileOutputStream fos = new FileOutputStream(STATS_FILE)) {
+            playerStats.store(fos, "X-O Network Arena Player Stats");
+        } catch (IOException e) {
+            System.err.println("Error saving stats: " + e.getMessage());
         }
     }
 
-    public static void updatePlayerStats(String name, String result) {
-        if (!isAvailable) return;
-        try (Connection conn = DriverManager.getConnection(DB_URL)) {
-            // Check if player exists
-            String selectSql = "SELECT id FROM players WHERE name = ?";
-            try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
-                pstmt.setString(1, name);
-                ResultSet rs = pstmt.executeQuery();
-                if (!rs.next()) {
-                    String insertSql = "INSERT INTO players (name) VALUES (?)";
-                    try (PreparedStatement insertPstmt = conn.prepareStatement(insertSql)) {
-                        insertPstmt.setString(1, name);
-                        insertPstmt.executeUpdate();
-                    }
-                }
-            }
+    public static synchronized void updatePlayerStats(String name, String result) {
+        if (name == null || name.isEmpty()) return;
+        
+        String key = name.toLowerCase();
+        String currentStats = playerStats.getProperty(key, "0,0,0"); // wins,losses,draws
+        String[] parts = currentStats.split(",");
+        int wins = Integer.parseInt(parts[0]);
+        int losses = Integer.parseInt(parts[1]);
+        int draws = Integer.parseInt(parts[2]);
 
-            String updateSql;
-            if ("WIN".equalsIgnoreCase(result)) {
-                updateSql = "UPDATE players SET wins = wins + 1 WHERE name = ?";
-            } else if ("LOSS".equalsIgnoreCase(result)) {
-                updateSql = "UPDATE players SET losses = losses + 1 WHERE name = ?";
-            } else {
-                updateSql = "UPDATE players SET draws = draws + 1 WHERE name = ?";
-            }
+        if ("WIN".equalsIgnoreCase(result)) {
+            wins++;
+        } else if ("LOSS".equalsIgnoreCase(result)) {
+            losses++;
+        } else {
+            draws++;
+        }
 
-            try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
-                pstmt.setString(1, name);
-                pstmt.executeUpdate();
-            }
-        } catch (SQLException e) {
-            System.err.println("Error updating player stats: " + e.getMessage());
+        playerStats.setProperty(key, wins + "," + losses + "," + draws);
+        // Store display name case-sensitively in a separate key if needed, 
+        // but for now we'll just use the provided name for the scoreboard.
+        playerStats.setProperty(key + ".name", name); 
+        
+        saveStats();
+    }
+
+    public static synchronized void recordMatch(String p1, String p2, String winner) {
+        try (PrintWriter out = new PrintWriter(new FileWriter(MATCH_LOG, true))) {
+            String timestamp = LocalDateTime.now().toString();
+            out.println(timestamp + " | " + p1 + " vs " + p2 + " | Winner: " + winner);
+        } catch (IOException e) {
+            System.err.println("Error logging match: " + e.getMessage());
         }
     }
 
-    public static void recordMatch(String p1, String p2, String winner) {
-        if (!isAvailable) return;
-        try (Connection conn = DriverManager.getConnection(DB_URL)) {
-            String sql = "INSERT INTO matches (player1, player2, winner, date_time) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setString(1, p1);
-                pstmt.setString(2, p2);
-                pstmt.setString(3, winner);
-                pstmt.setString(4, LocalDateTime.now().toString());
-                pstmt.executeUpdate();
-            }
-        } catch (SQLException e) {
-            System.err.println("Error recording match: " + e.getMessage());
-        }
-    }
-
-    public static String getScoreboard() {
-        if (!isAvailable) return "Scoreboard unavailable (DB error).";
+    public static synchronized String getScoreboard() {
         StringBuilder sb = new StringBuilder();
         sb.append("\n--- SCOREBOARD ---\n");
         sb.append(String.format("%-15s | %-5s | %-5s | %-5s\n", "Player", "Wins", "Loss", "Draw"));
         sb.append("------------------------------------------\n");
-        try (Connection conn = DriverManager.getConnection(DB_URL);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM players ORDER BY wins DESC")) {
+
+        List<PlayerScore> scores = new ArrayList<>();
+        for (String key : playerStats.stringPropertyNames()) {
+            if (key.endsWith(".name")) continue;
             
-            while (rs.next()) {
-                sb.append(String.format("%-15s | %-5d | %-5d | %-5d\n",
-                        rs.getString("name"),
-                        rs.getInt("wins"),
-                        rs.getInt("losses"),
-                        rs.getInt("draws")));
-            }
-        } catch (SQLException e) {
-            sb.append("Error fetching scoreboard: ").append(e.getMessage());
+            String name = playerStats.getProperty(key + ".name", key);
+            String stats = playerStats.getProperty(key);
+            String[] parts = stats.split(",");
+            scores.add(new PlayerScore(name, 
+                Integer.parseInt(parts[0]), 
+                Integer.parseInt(parts[1]), 
+                Integer.parseInt(parts[2])));
         }
+
+        // Sort by wins descending
+        scores.sort((a, b) -> b.wins - a.wins);
+
+        for (PlayerScore ps : scores) {
+            sb.append(String.format("%-15s | %-5d | %-5d | %-5d\n",
+                    ps.name, ps.wins, ps.losses, ps.draws));
+        }
+        
+        if (scores.isEmpty()) {
+            sb.append("No matches recorded yet.\n");
+        }
+
         return sb.toString();
+    }
+
+    private static class PlayerScore {
+        String name;
+        int wins, losses, draws;
+        PlayerScore(String name, int wins, int losses, int draws) {
+            this.name = name; this.wins = wins; this.losses = losses; this.draws = draws;
+        }
     }
 }
