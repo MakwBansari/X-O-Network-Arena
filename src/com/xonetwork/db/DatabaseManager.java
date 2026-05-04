@@ -6,12 +6,18 @@ import java.time.LocalDateTime;
 public class DatabaseManager {
     private static final String DB_URL = "jdbc:sqlite:xonetwork.db";
 
+    private static boolean isAvailable = false;
+
     static {
         try {
             Class.forName("org.sqlite.JDBC");
             initializeDatabase();
+            isAvailable = true;
+            System.out.println("Database initialized successfully.");
         } catch (ClassNotFoundException e) {
-            System.err.println("SQLite JDBC driver not found.");
+            System.err.println("SQLite JDBC driver not found. Persistence disabled.");
+        } catch (Throwable t) {
+            System.err.println("Failed to initialize database: " + t.getMessage() + ". Persistence disabled.");
         }
     }
 
@@ -39,6 +45,7 @@ public class DatabaseManager {
     }
 
     public static void updatePlayerStats(String name, String result) {
+        if (!isAvailable) return;
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
             // Check if player exists
             String selectSql = "SELECT id FROM players WHERE name = ?";
@@ -73,6 +80,7 @@ public class DatabaseManager {
     }
 
     public static void recordMatch(String p1, String p2, String winner) {
+        if (!isAvailable) return;
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
             String sql = "INSERT INTO matches (player1, player2, winner, date_time) VALUES (?, ?, ?, ?)";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -88,6 +96,7 @@ public class DatabaseManager {
     }
 
     public static String getScoreboard() {
+        if (!isAvailable) return "Scoreboard unavailable (DB error).";
         StringBuilder sb = new StringBuilder();
         sb.append("\n--- SCOREBOARD ---\n");
         sb.append(String.format("%-15s | %-5s | %-5s | %-5s\n", "Player", "Wins", "Loss", "Draw"));
