@@ -59,7 +59,10 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Client handler error: " + e.getMessage());
+            System.err.println("Client handler IO error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Unexpected error in ClientHandler for Player " + playerNum + ":");
+            e.printStackTrace();
         } finally {
             GameServer.handlePlayerDisconnect(this);
             try { socket.close(); } catch (IOException e) {}

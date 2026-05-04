@@ -163,10 +163,11 @@ public class GameClient {
     }
 
     private void refreshUI() {
-        System.out.print(CLEAR);
-        System.out.flush();
-        
-        System.out.println(BOLD + CYAN + "=== X-O NETWORK ARENA ===" + RESET);
+        try {
+            System.out.print(CLEAR);
+            System.out.flush();
+            
+            System.out.println(BOLD + CYAN + "=== X-O NETWORK ARENA ===" + RESET);
         System.out.println("Player: " + GREEN + playerName + RESET + " | Symbol: " + 
                 (mySymbol == 'X' ? RED : BLUE) + mySymbol + RESET);
         
@@ -193,6 +194,10 @@ public class GameClient {
             System.out.print(BOLD + GREEN + "\nYOUR TURN > " + RESET);
         } else {
             System.out.print(BOLD + YELLOW + "\nWAITING FOR OPPONENT... > " + RESET);
+        }
+        } catch (Exception e) {
+            // Silently ignore UI refresh errors or log them minimally
+            // System.err.println("UI Refresh error: " + e.getMessage());
         }
     }
 

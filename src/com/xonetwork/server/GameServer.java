@@ -6,7 +6,10 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -16,11 +19,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class GameServer {
     private static final int PORT = 8888;
-    private static List<ClientHandler> clients = new ArrayList<>();
+    private static List<ClientHandler> clients = new CopyOnWriteArrayList<>();
     private static GameBoard board = new GameBoard();
     private static int currentPlayerIndex = 0; // 0 for Player 1 (X), 1 for Player 2 (O)
     private static boolean gameActive = false;
-    private static java.util.Set<ClientHandler> replayRequests = new java.util.HashSet<>();
+    private static Set<ClientHandler> replayRequests = Collections.synchronizedSet(new java.util.HashSet<>());
     private static java.util.List<String> matchHistory = new java.util.ArrayList<>();
 
     public static void main(String[] args) {
@@ -154,18 +157,18 @@ public class GameServer {
         }
     }
 
-    public static void broadcast(String message) {
+    public static synchronized void broadcast(String message) {
         for (ClientHandler client : clients) {
             client.sendMessage(message);
         }
     }
 
-    public static void broadcastBoard() {
+    public static synchronized void broadcastBoard() {
         String boardStr = board.getFormattedBoard().replace("\n", "\\n");
         broadcast("BOARD " + boardStr);
     }
 
-    public static void broadcastChat(String sender, String msg) {
+    public static synchronized void broadcastChat(String sender, String msg) {
         broadcast("CHAT [" + sender + "]: " + msg);
     }
     
