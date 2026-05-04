@@ -56,7 +56,7 @@ public class GameClient {
             // Main loop for user input
             while (running) {
                 String input = scanner.nextLine();
-                if (input == null || input.equalsIgnoreCase("/exit")) {
+                if (input == null || input.equalsIgnoreCase("/exit") || input.equalsIgnoreCase("./exit")) {
                     out.println("EXIT");
                     running = false;
                     break;
@@ -149,6 +149,10 @@ public class GameClient {
                         break;
                     case "START":
                         currentInfo = "Game Started!";
+                        refreshUI();
+                        break;
+                    case "REPLAY_PROMPT":
+                        currentInfo = data + " wants a rematch! Type 'REPLAY' to accept or '/exit' to decline.";
                         refreshUI();
                         break;
                 }

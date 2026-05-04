@@ -102,15 +102,36 @@ public class GameServer {
         broadcast("INFO Type 'REPLAY' for a rematch or '/history' to see moves.");
     }
 
-    public static synchronized void handleReplayRequest(ClientHandler client) {
+    public static synchronized void handleReplayRequest(ClientHandler requester) {
         if (gameActive) return;
         
-        replayRequests.add(client);
+        replayRequests.add(requester);
         if (replayRequests.size() == 2) {
             startGame();
         } else {
-            String requester = client.getPlayerName() != null ? client.getPlayerName() : "Player " + client.getPlayerNum();
-            broadcast("CHAT [SYSTEM]: " + requester + " wants a rematch! Type 'REPLAY' to accept.");
+            String requesterName = requester.getPlayerName() != null ? requester.getPlayerName() : "Player " + requester.getPlayerNum();
+            for (ClientHandler client : clients) {
+                if (client != requester) {
+                    client.sendMessage("REPLAY_PROMPT " + requesterName);
+                } else {
+                    client.sendMessage("INFO Waiting for opponent to accept rematch...");
+                }
+            }
+        }
+    }
+
+    public static synchronized void handlePlayerDisconnect(ClientHandler client) {
+        if (clients.contains(client)) {
+            clients.remove(client);
+            replayRequests.remove(client);
+            String name = client.getPlayerName() != null ? client.getPlayerName() : "Player " + client.getPlayerNum();
+            System.out.println(name + " disconnected.");
+            
+            if (!clients.isEmpty()) {
+                clients.get(0).sendMessage("INFO " + name + " has left the arena.");
+                gameActive = false;
+                replayRequests.clear();
+            }
         }
     }
 
