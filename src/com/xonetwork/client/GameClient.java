@@ -20,6 +20,7 @@ public class GameClient {
     private String currentBoard = "";
     private String currentInfo = "Waiting for game to start...";
     private String currentScoreboard = "";
+    private String lastMatchResult = "";
     private java.util.List<String> chatHistory = new java.util.ArrayList<>();
 
     // ANSI Colors
@@ -144,11 +145,12 @@ public class GameClient {
                     case "WIN":
                     case "LOSS":
                     case "DRAW":
-                        currentInfo = "*** " + data + " ***\\nType 'REPLAY' to play again or '/exit' to quit.";
+                        lastMatchResult = "*** " + data + " ***";
                         refreshUI();
                         break;
                     case "START":
                         currentInfo = "Game Started!";
+                        lastMatchResult = "";
                         refreshUI();
                         break;
                     case "REPLAY_PROMPT":
@@ -179,6 +181,9 @@ public class GameClient {
             .replace("  O  ", BLUE + "  O  " + RESET);
         
         System.out.println(coloredBoard);
+        if (!lastMatchResult.isEmpty()) {
+            System.out.println(CYAN + BOLD + lastMatchResult + RESET);
+        }
         System.out.println(YELLOW + currentInfo.replace("\\n", "\n") + RESET);
         
         if (!currentScoreboard.isEmpty()) {
